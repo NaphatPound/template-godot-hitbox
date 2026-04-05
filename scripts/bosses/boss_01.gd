@@ -21,6 +21,9 @@ var facing_right: bool = false
 var idle_hitboxes: Array = []
 var attack_hitboxes: Array = []
 
+func _is_attack_playing() -> bool:
+	return anim_sprite != null and anim_sprite.animation == "attack" and anim_sprite.is_playing()
+
 @onready var anim_sprite: AnimatedSprite2D = $Sprite
 @onready var shockwave_area: Area2D = $ShockwaveArea
 @onready var telegraph_label: Label = $TelegraphLabel
@@ -90,10 +93,15 @@ func _chase(_delta: float) -> void:
 		return
 	var dir: float = sign(player.global_position.x - global_position.x)
 	velocity.x = dir * MOVE_SPEED
-	facing_right = dir >= 0
-	anim_sprite.flip_h = not facing_right
 
-	if attack_cooldown <= 0:
+	# Only flip sprite direction when not mid-attack animation
+	if not _is_attack_playing():
+		facing_right = dir >= 0
+		anim_sprite.flip_h = not facing_right
+		_update_hitbox_for_frame()
+
+	# Block new attack trigger while attack animation is still playing
+	if attack_cooldown <= 0 and not _is_attack_playing():
 		var dist: float = abs(player.global_position.x - global_position.x)
 		var pattern: String = str(patterns[pattern_index % patterns.size()])
 		if pattern == "dash" or dist > 300:
@@ -188,6 +196,8 @@ func _on_sprite_frame_changed() -> void:
 func _on_sprite_animation_finished() -> void:
 	if anim_sprite.animation == "attack":
 		anim_sprite.play("idle")
+		if attack_area:
+			attack_area.monitoring = false
 		_update_hitbox_for_frame()
 		queue_redraw()
 

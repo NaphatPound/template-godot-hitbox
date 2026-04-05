@@ -35,6 +35,6 @@ func _update_player_masks(hp: int) -> void:
 		child.queue_free()
 	for i in range(5):
 		var mask := ColorRect.new()
-		mask.size = Vector2(24, 24)
+		mask.custom_minimum_size = Vector2(24, 24)
 		mask.color = Color(0.2, 0.7, 1.0) if i < hp else Color(0.15, 0.15, 0.15)
 		player_health_container.add_child(mask)
