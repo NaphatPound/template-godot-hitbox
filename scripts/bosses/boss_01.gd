@@ -128,7 +128,8 @@ func _dash_telegraph(_delta: float) -> void:
 		if player:
 			dash_direction = sign(player.global_position.x - global_position.x)
 			facing_right = dash_direction >= 0
-			anim_sprite.flip_h = not facing_right
+			# Attack sprites are natively mirrored vs idle, so flip logic is inverted
+			anim_sprite.flip_h = facing_right
 		if attack_area:
 			attack_area.monitoring = true
 		_set_state(BossState.DASHING)
@@ -214,7 +215,8 @@ func _on_sprite_animation_finished() -> void:
 func _update_hitbox_for_frame() -> void:
 	var is_attacking: bool = anim_sprite.animation == "attack"
 	var frame: int = anim_sprite.frame
-	var flip: bool = not facing_right
+	# Attack sprites are natively mirrored vs idle, so polygon flip is also inverted
+	var flip: bool = facing_right if is_attacking else not facing_right
 
 	if not is_attacking:
 		if idle_hitboxes.size() > 0:
@@ -239,7 +241,7 @@ func _draw() -> void:
 		return
 	var is_attacking: bool = anim_sprite.animation == "attack"
 	var frame: int = anim_sprite.frame
-	var flip: bool = not facing_right
+	var flip: bool = facing_right if is_attacking else not facing_right
 
 	# Hurtbox — green
 	var hbody := PackedVector2Array()
