@@ -91,6 +91,12 @@ func _idle(_delta: float) -> void:
 func _chase(_delta: float) -> void:
 	if player == null:
 		return
+
+	# Freeze movement while attack animation is still playing
+	if _is_attack_playing():
+		velocity.x = move_toward(velocity.x, 0, 300 * _delta)
+		return
+
 	var dir: float = sign(player.global_position.x - global_position.x)
 	velocity.x = dir * MOVE_SPEED
 
