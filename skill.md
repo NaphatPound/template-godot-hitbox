@@ -7,7 +7,125 @@ Converts per-frame PNG sprites and polygon hitbox JSON files into a fully workin
 - Debug draw overlay showing hitbox polygons in-game
 - Facing-direction flip (mirror hitboxes for left/right)
 
+## Two integration approaches
+
+| Approach | File | Best for |
+|----------|------|----------|
+| **Component (recommended)** | `scripts/hitbox_controller.gd` | Any character — drop node + 3 lines of code |
+| **Manual (low-level)** | `scripts/hitbox_loader.gd` | Fine-grained control, custom logic |
+
 ---
+
+## Approach A: HitboxController component (auto-everything)
+
+`HitboxController` is a Node you add as a child of any `CharacterBody2D`. It auto-discovers PNG frames and JSON in a directory, builds the sprite, and manages hitboxes — no boilerplate needed.
+
+### Scene structure
+```
+CharacterBody2D (your_character.gd)
+├── AnimatedSprite2D          ← controller finds this automatically
+├── CollisionShape2D          ← physics body, keep simple
+├── Hurtbox (Area2D)
+│   └── CollisionPolygon2D   ← controller finds and updates this
+├── AttackHitbox (Area2D)  [group: "player_attack" or name contains "attack"]
+│   └── CollisionPolygon2D   ← controller finds and updates this
+└── HitboxController          ← add this node (hitbox_controller.gd)
+```
+
+The controller auto-detects nodes by type and group/name heuristics — no path configuration needed.
+
+### Usage in character script
+
+```gdscript
+extends CharacterBody2D
+
+@onready var hitbox: HitboxController = $HitboxController
+
+func _ready() -> void:
+    hitbox.setup({
+        "idle": {
+            "dir": "res://assets/animation/player/idle/",
+            "fps": 4.0,
+            "loop": true
+        },
+        "attack": {
+            "dir": "res://assets/animation/player/attack/",
+            "fps": 12.0,
+            "loop": false
+        }
+    })
+    # Optional: react to frame changes
+    hitbox.frame_updated.connect(_on_hitbox_frame)
+
+func _draw() -> void:
+    hitbox.draw_debug(self)   # green = hurtbox, red = attack
+
+func _on_direction_change(facing_right: bool) -> void:
+    hitbox.set_facing(facing_right)
+
+func do_attack() -> void:
+    hitbox.play("attack")
+
+func _on_hitbox_frame(anim: String, frame: int, has_attack: bool) -> void:
+    # Enable attack area monitoring when attack polygon is active
+    $AttackHitbox.monitoring = has_attack
+```
+
+### HitboxController API
+
+| Method | Description |
+|--------|-------------|
+| `setup(anim_configs: Dictionary)` | **Main entry.** Auto-discovers PNGs + JSON, builds sprite, loads hitboxes |
+| `play(anim_name: String)` | Play an animation and update hitboxes immediately |
+| `set_facing(right: bool)` | Flip sprite and mirror hitbox polygons |
+| `get_current_hitboxes() -> Dictionary` | Returns `{"body": PackedVector2Array, "attack": PackedVector2Array}` |
+| `draw_debug(canvas: CanvasItem)` | Call from parent `_draw()` to show overlay |
+
+| Signal | Description |
+|--------|-------------|
+| `frame_updated(anim, frame, has_attack)` | Fires on every frame change |
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `sprite_scale` | `0.045` | Scale applied to sprite and polygon vertices |
+| `img_width` | `2480.0` | Source PNG width in pixels |
+| `img_height` | `3508.0` | Source PNG height in pixels |
+| `show_debug` | `true` | Toggle debug overlay |
+
+### Auto-discovery rules
+- Scans the `dir` path for `*.PNG` / `*.png` files — sorted alphabetically = frame order
+- Finds `*hitbox*.json` in the same directory automatically
+- Override JSON path with `"hitbox_json": "res://path/to/file.json"` in the config
+- Limit frames with `"frame_count": 3` in the config
+
+### anim_configs full format
+```gdscript
+hitbox.setup({
+    "idle": {
+        "dir":         "res://assets/animation/player/idle/",  # required
+        "fps":         4.0,    # default: 8.0
+        "loop":        true,   # default: true
+        # optional overrides:
+        "frame_count": 1,      # limit to N frames
+        "hitbox_json": "res://assets/animation/player/idle/idle-hitbox.json"
+    },
+    "attack": {
+        "dir":   "res://assets/animation/player/attack/",
+        "fps":   12.0,
+        "loop":  false
+    },
+    # Add as many animations as needed
+    "run": {
+        "dir":  "res://assets/animation/player/run/",
+        "fps":  10.0,
+        "loop": true
+    }
+})
+```
+
+---
+
+## Approach B: Manual (HitboxLoader)
 
 ## Asset format expected
 
