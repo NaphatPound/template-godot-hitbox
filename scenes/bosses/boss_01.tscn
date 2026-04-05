@@ -1,0 +1,37 @@
+[gd_scene load_steps=4 format=3 uid="uid://pm838f2z71qa5"]
+
+[ext_resource type="Script" path="res://scripts/bosses/boss_01.gd" id="1"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(44, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_shockwave"]
+size = Vector2(120, 20)
+
+[node name="Boss01" type="CharacterBody2D" groups=["boss"]]
+script = ExtResource("1")
+boss_name = "Knight Shade"
+max_health = 80
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_1")
+
+[node name="AttackArea" type="Area2D" parent="." groups=["boss_attack"]]
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="AttackArea"]
+
+[node name="Hurtbox" type="Area2D" parent="."]
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Hurtbox"]
+
+[node name="ShockwaveArea" type="Area2D" parent="." groups=["boss_attack"]]
+position = Vector2(0, 10)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ShockwaveArea"]
+shape = SubResource("RectangleShape2D_shockwave")
+
+[node name="TelegraphLabel" type="Label" parent="."]
+position = Vector2(-10, -80)
+text = "!"
