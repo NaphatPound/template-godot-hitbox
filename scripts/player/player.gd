@@ -13,6 +13,7 @@ const DASH_DURATION := 0.18
 const DASH_COOLDOWN := 0.8
 const GRAVITY := 980.0
 const INVINCIBILITY_TIME := 1.5
+const ATTACK_DAMAGE := 10
 
 @export var max_health: int = 5
 
@@ -29,6 +30,7 @@ var is_dead: bool = false
 
 var idle_hitboxes: Array = []
 var attack_hitboxes: Array = []
+var _hit_this_swing: Array = []
 
 @onready var sprite: AnimatedSprite2D = $Sprite
 @onready var attack_hitbox: Area2D = $AttackHitbox
@@ -76,6 +78,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	if Input.is_action_just_pressed("attack"):
 		_do_attack()
+	_check_attack_hits()
 
 func _apply_gravity(delta: float) -> void:
 	if not is_on_floor():
@@ -132,9 +135,21 @@ func _do_attack() -> void:
 	if not attack_timer.is_stopped():
 		return
 	print("[DEBUG] Player attack")
+	_hit_this_swing.clear()
 	attack_hitbox.monitoring = true
 	sprite.play("attack")
 	attack_timer.start()
+
+func _check_attack_hits() -> void:
+	if not attack_hitbox.monitoring:
+		return
+	for area in attack_hitbox.get_overlapping_areas():
+		if area in _hit_this_swing:
+			continue
+		_hit_this_swing.append(area)
+		var target := area.get_parent()
+		if target.has_method("take_damage"):
+			target.take_damage(ATTACK_DAMAGE)
 
 func _on_attack_timer_timeout() -> void:
 	attack_hitbox.monitoring = false
