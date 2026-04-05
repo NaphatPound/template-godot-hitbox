@@ -134,12 +134,13 @@ func _dash_telegraph(_delta: float) -> void:
 		_set_state(BossState.DASHING)
 
 func _do_dash(_delta: float) -> void:
-	velocity.x = dash_direction * DASH_SPEED
+	# Hold position while attack animation plays; transition on animation end
+	velocity.x = 0
 	anim_sprite.modulate = Color(2.0, 0.2, 0.2)
-	if state_timer <= 0:
+	# Fallback: if animation already finished, recover
+	if not _is_attack_playing() and state_timer <= 0:
 		if attack_area:
 			attack_area.monitoring = false
-		velocity.x = 0
 		_set_state(BossState.RECOVER)
 
 func _slam_telegraph(_delta: float) -> void:
@@ -201,9 +202,12 @@ func _on_sprite_frame_changed() -> void:
 
 func _on_sprite_animation_finished() -> void:
 	if anim_sprite.animation == "attack":
-		anim_sprite.play("idle")
 		if attack_area:
 			attack_area.monitoring = false
+		# Transition out of any attack state when animation ends naturally
+		if state == BossState.DASHING or state == BossState.SLAMMING:
+			_set_state(BossState.RECOVER)
+		anim_sprite.play("idle")
 		_update_hitbox_for_frame()
 		queue_redraw()
 
