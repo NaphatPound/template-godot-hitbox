@@ -153,6 +153,9 @@ func _slam_telegraph(_delta: float) -> void:
 	if state_timer <= 0:
 		if telegraph_label:
 			telegraph_label.visible = false
+		if player:
+			facing_right = sign(player.global_position.x - global_position.x) >= 0
+		anim_sprite.flip_h = facing_right  # attack sprites use inverted flip
 		_set_state(BossState.SLAMMING)
 
 func _do_slam(_delta: float) -> void:
@@ -209,6 +212,7 @@ func _on_sprite_animation_finished() -> void:
 		if state == BossState.DASHING or state == BossState.SLAMMING:
 			_set_state(BossState.RECOVER)
 		anim_sprite.play("idle")
+		anim_sprite.flip_h = not facing_right  # restore idle flip
 		_update_hitbox_for_frame()
 		queue_redraw()
 
