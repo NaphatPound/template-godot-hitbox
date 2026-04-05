@@ -146,8 +146,10 @@ func _check_attack_hits() -> void:
 	for area in attack_hitbox.get_overlapping_areas():
 		if area in _hit_this_swing:
 			continue
-		_hit_this_swing.append(area)
 		var target := area.get_parent()
+		if target == self:
+			continue
+		_hit_this_swing.append(area)
 		if target.has_method("take_damage"):
 			target.take_damage(ATTACK_DAMAGE)
 
